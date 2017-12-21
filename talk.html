@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="generator" content="pandoc">
+  <meta name="author" content="QFPL @ Data61, CSIRO">
+  <title>Cargo Culting Lenses for Fun &amp; Profit</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+  <link rel="stylesheet" href="reveal.js/css/reveal.css">
+  <style type="text/css">code{white-space: pre;}</style>
+  <style type="text/css">
+div.sourceCode { overflow-x: auto; }
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; line-height: 100%; background-color: #2a211c; color: #bdae9d; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; background-color: #2a211c; color: #bdae9d; border-right: 1px solid #bdae9d; }
+td.sourceCode { padding-left: 5px; }
+pre, code { color: #bdae9d; background-color: #2a211c; }
+code > span.kw { color: #43a8ed; font-weight: bold; } /* Keyword */
+code > span.dt { text-decoration: underline; } /* DataType */
+code > span.dv { color: #44aa43; } /* DecVal */
+code > span.bn { color: #44aa43; } /* BaseN */
+code > span.fl { color: #44aa43; } /* Float */
+code > span.ch { color: #049b0a; } /* Char */
+code > span.st { color: #049b0a; } /* String */
+code > span.co { color: #0066ff; font-style: italic; } /* Comment */
+code > span.al { color: #ffff00; } /* Alert */
+code > span.fu { color: #ff9358; font-weight: bold; } /* Function */
+code > span.er { color: #ffff00; font-weight: bold; } /* Error */
+code > span.wa { color: #ffff00; font-weight: bold; } /* Warning */
+code > span.cn { } /* Constant */
+code > span.sc { color: #049b0a; } /* SpecialChar */
+code > span.vs { color: #049b0a; } /* VerbatimString */
+code > span.ss { color: #049b0a; } /* SpecialString */
+code > span.im { } /* Import */
+code > span.va { } /* Variable */
+code > span.cf { color: #43a8ed; font-weight: bold; } /* ControlFlow */
+code > span.op { } /* Operator */
+code > span.bu { } /* BuiltIn */
+code > span.ex { } /* Extension */
+code > span.pp { font-weight: bold; } /* Preprocessor */
+code > span.at { } /* Attribute */
+code > span.do { color: #0066ff; font-style: italic; } /* Documentation */
+code > span.an { color: #0066ff; font-weight: bold; font-style: italic; } /* Annotation */
+code > span.co { color: #0066ff; font-weight: bold; font-style: italic; } /* Comment */
+code > span.in { color: #0066ff; font-weight: bold; font-style: italic; } /* Information */
+  </style>
+  <link rel="stylesheet" href="reveal.js/css/theme/black.css" id="theme">
+  <link rel="stylesheet" href="css/custom.css"/>
+  <!-- Printing and PDF exports -->
+  <script>
+    var link = document.createElement( 'link' );
+    link.rel = 'stylesheet';
+    link.type = 'text/css';
+    link.href = window.location.search.match( /print-pdf/gi ) ? 'reveal.js/css/print/pdf.css' : 'reveal.js/css/print/paper.css';
+    document.getElementsByTagName( 'head' )[0].appendChild( link );
+  </script>
+  <!--[if lt IE 9]>
+  <script src="reveal.js/lib/js/html5shiv.js"></script>
+  <![endif]-->
+</head>
+<body>
+  <div class="reveal">
+    <div class="slides">
+
+<section>
+  <h1 class="title">Cargo Culting Lenses for Fun &amp; Profit</h1>
+  <p class="author">QFPL @ Data61, CSIRO</p>
+  <p class="date">sean.chalmers@data61.csiro.au</p>
+</section>
+
+<section id="lenses-are-functions" class="slide level3">
+<h3>Lenses are functions</h3>
+<ul>
+<li>Easy to lose sight of, but important to remember!</li>
+<li>Lenses are still only functions, which is why we can compose them!</li>
+</ul>
+</section>
+<section id="housekeeping" class="slide level3">
+<h3>Housekeeping</h3>
+<ul>
+<li>I'll be using Haskell <code>lens</code></li>
+<li>Scala has lenses too!</li>
+<li>I don't claim to be an expert!</li>
+</ul>
+</section>
+<section id="getter-setter" class="slide level3">
+<h3>Getter &amp; Setter</h3>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- Getter</span>
+<span class="ot">(^.) ::</span> s <span class="ot">-&gt;</span> <span class="dt">Getting</span> a s a <span class="ot">-&gt;</span> a
+<span class="co">-- Setter</span>
+<span class="ot">(.~) ::</span> <span class="dt">ASetter</span> s t a b <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> s <span class="ot">-&gt;</span> t</code></pre></div>
+<p>Talk over, right?</p>
+</section>
+<section id="simplest-simples" class="slide level3">
+<h3>Simplest Simples</h3>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Foo</span> <span class="fu">=</span> <span class="dt">Foo</span> 
+  {<span class="ot"> _petCamelName     ::</span> <span class="dt">Text</span>
+  ,<span class="ot"> _petCamelTopSpeed ::</span> <span class="dt">Int</span> 
+  }
+
+<span class="co">-- What units of speed? Cabbages?!</span>
+<span class="kw">let</span> foo <span class="fu">=</span> <span class="dt">Foo</span> <span class="st">&quot;Fred&quot;</span> <span class="dv">35</span></code></pre></div>
+</section>
+<section id="getter" class="slide level3">
+<h3>Getter</h3>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">_petCamelName foo <span class="fu">==</span> <span class="st">&quot;Fred&quot;</span> <span class="fu">==</span>  foo <span class="fu">^.</span> petCamelName</code></pre></div>
+<p>Yay?</p>
+</section>
+<section id="inception-movie-pun" class="slide level3">
+<h3>[Inception Movie Pun]</h3>
+<p>Reach deeper into <code>Bar</code> to retrieve the pet name:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Bar</span> <span class="fu">=</span> <span class="dt">Bar</span> {<span class="ot"> _camelPerson ::</span> <span class="dt">Foo</span> }
+
+<span class="st">&quot;Sally&quot;</span> <span class="fu">=</span> bar <span class="fu">^.</span> camelPerson <span class="fu">.</span> petCamelName</code></pre></div>
+<p>Works for setting a value too:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">bar <span class="fu">&amp;</span> camelPerson <span class="fu">.</span> petCamelName <span class="fu">.~</span> <span class="st">&quot;Sally&quot;</span></code></pre></div>
+</section>
+<section id="lenses-are-functions-1" class="slide level3">
+<h3>Lenses are functions!</h3>
+<p>Lenses compose to make new lenses:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">camelPerson ::</span> <span class="dt">Lens&#39;</span> <span class="dt">Bar</span> <span class="dt">Foo</span>
+<span class="ot">petCamelName ::</span> <span class="dt">Lens&#39;</span> <span class="dt">Foo</span> <span class="dt">Text</span></code></pre></div>
+<p>Compose these with (<code>.</code>)</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">camelPerson <span class="fu">.</span><span class="ot"> petCamelName ::</span> <span class="dt">Lens&#39;</span> <span class="dt">Bar</span> <span class="dt">Text</span></code></pre></div>
+</section>
+<section id="setter" class="slide level3">
+<h3>Setter</h3>
+<p>Simple replacement using <code>(.~)</code></p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">(petCamelName <span class="fu">.~</span>)<span class="ot"> ::</span> <span class="dt">Text</span> <span class="ot">-&gt;</span> <span class="dt">Foo</span> <span class="ot">-&gt;</span> <span class="dt">Foo</span>
+<span class="co">--</span>
+petCamelName <span class="fu">.~</span> <span class="st">&quot;Sally&quot;</span></code></pre></div>
+<p>Using reverse apply <code>(&amp;)</code>:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">foo <span class="fu">&amp;</span> petCamelName <span class="fu">.~</span> <span class="st">&quot;Sally&quot;</span></code></pre></div>
+</section>
+<section id="multiple-updates" class="slide level3">
+<h3>Multiple Updates ?</h3>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">f ::</span> <span class="dt">Foo</span> <span class="ot">-&gt;</span> <span class="dt">Foo</span>
+f <span class="fu">=</span> petCamelName <span class="fu">.~</span> <span class="st">&quot;Sally&quot;</span> <span class="fu">&amp;</span> petCamelTopSpeed <span class="fu">.~</span> <span class="dv">48</span></code></pre></div>
+<p>Applied directly:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">foo <span class="fu">&amp;</span> petCamelName <span class="fu">.~</span> <span class="st">&quot;Sally&quot;</span>
+    <span class="fu">&amp;</span> petCamelTopSpeed <span class="fu">.~</span> <span class="dv">48</span></code></pre></div>
+</section>
+<section id="update-with-a-function" class="slide level3">
+<h3>Update with a function</h3>
+<p>Apply a function to your lens target</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">petCamelTopSpeed <span class="fu">%~</span> (<span class="fu">+</span><span class="dv">10</span>)</code></pre></div>
+<p>There are heaps of prebaked operators:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">petCamelTopSpeed <span class="fu">+~</span> <span class="dv">10</span>           <span class="co">-- Add 10 cabbages</span>
+petCamelTopSpeed <span class="fu">//~</span> <span class="dv">2</span>           <span class="co">-- Divide by 2 cabbages</span>
+petCamelName     <span class="fu">&lt;&gt;~</span> <span class="st">&quot; the Wise&quot;</span> <span class="co">-- Reward victory with a title</span></code></pre></div>
+</section>
+<section id="getting-interesting" class="slide level3">
+<h3>Getting interesting</h3>
+<p>Geddit? eh? eh? ...fine.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">A</span> <span class="fu">=</span> <span class="dt">A</span> {<span class="ot"> _bars ::</span> [<span class="dt">Bar</span>] }</code></pre></div>
+<ul>
+<li class="fragment">Get the names of all the camels</li>
+<li class="fragment">Update speed values</li>
+<li class="fragment">What function could possibly achieve such a thing?</li>
+</ul>
+</section>
+<section id="traverse-its-always-traverse" class="slide level3">
+<h3><code>traverse</code>, it's always traverse</h3>
+<ul>
+<li class="fragment"><div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">tBars <span class="fu">=</span> bars <span class="fu">.</span> traverse</code></pre></div></li>
+<li class="fragment"><div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- (^..) is an alias of &#39;toListOf&#39;</span>
+a <span class="fu">^..</span> tBars <span class="fu">.</span> camelPerson <span class="fu">.</span> petCamelName</code></pre></div></li>
+<li class="fragment"><div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- Works with setters too, of course</span>
+tBars <span class="fu">.</span> camelPerson <span class="fu">.</span> petCamelTopSpeed <span class="fu">+~</span> <span class="dv">10</span></code></pre></div></li>
+<li class="fragment"><div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- What do you think this would do?</span>
+a <span class="fu">^.</span> tBars <span class="fu">.</span> camelPerson <span class="fu">.</span> petCamelName</code></pre></div></li>
+</ul>
+</section>
+<section id="traversal" class="slide level3">
+<h3>Traversal</h3>
+<p>This is called a <code>Traversal</code>.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">tBars ::</span> <span class="dt">Traversal&#39;</span> <span class="dt">A</span> <span class="dt">Bar</span>
+tBars <span class="fu">=</span> bars <span class="fu">.</span> traverse</code></pre></div>
+<p>Which we can extend and reuse!</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">topSpeeds ::</span> <span class="dt">Traversal&#39;</span> <span class="dt">A</span> <span class="dt">Int</span>
+topSpeeds <span class="fu">=</span> tBars <span class="fu">.</span> camelPerson <span class="fu">.</span> petCamelTopSpeed</code></pre></div>
+<p>Exercise: Write the same function without using lenses.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">topSpeeds ::</span> <span class="dt">Applicative</span> f <span class="ot">=&gt;</span> (<span class="dt">Int</span> <span class="ot">-&gt;</span> f <span class="dt">Int</span>) <span class="ot">-&gt;</span> <span class="dt">A</span> <span class="ot">-&gt;</span> f <span class="dt">A</span></code></pre></div>
+</section>
+<section id="fold" class="slide level3">
+<h3>Fold</h3>
+<p>Combining a Getter with a Traversal will yield a Fold.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- We saw a Fold earlier : (^..)</span>
+a <span class="fu">^..</span> tBars <span class="fu">.</span> camelPerson <span class="fu">.</span> petCamelName</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- Only want the first camel person?</span>
+a <span class="fu">^?</span> bars <span class="fu">.</span> _head</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- Calculate maximum cabbage units?</span>
+maximumOf (tBars <span class="fu">.</span> camelPerson <span class="fu">.</span> petCamelTopSpeed) a</code></pre></div>
+</section>
+<section id="lens-family-tree" class="slide level3">
+<h3>Lens Family Tree</h3>
+<pre><code>  Fold   Setter
+   / \_____/
+   \       \
+Getter  Traversal
+   /  ____/
+   \ /    \
+  Lens   Prism
+     \   /
+      Iso</code></pre>
+</section>
+<section id="lets-get-wild." class="slide level3">
+<h3>Lets get wild.</h3>
+<p>Update a value in a StateT?</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- Assuming : StateT Foo m </span>
+petCamelName     <span class="fu">.=</span> <span class="st">&quot;Bub&quot;</span>         <span class="co">-- Replace</span>
+petCamelTopSpeed <span class="fu">%=</span> (<span class="fu">-</span><span class="dv">10</span>)         <span class="co">-- Map</span>
+petCamelName     <span class="fu">&lt;&gt;=</span> <span class="st">&quot; the Swift&quot;</span> <span class="co">-- Mappend</span></code></pre></div>
+<ul>
+<li class="fragment">What if it's in a thing in the thing in StateT?</li>
+<li class="fragment"><div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- Assuming : StateT Bar m</span>
+camelPerson <span class="fu">.</span> petCamelTopSpeed <span class="fu">%=</span> (<span class="fu">-</span><span class="dv">10</span>)</code></pre></div></li>
+</ul>
+</section>
+<section id="build-giant-updates" class="slide level3">
+<h3>Build Giant Updates</h3>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">\n ds <span class="ot">-&gt;</span> 
+  ds <span class="fu">&amp;</span> dataSet_max <span class="fu">%~</span> max n
+     <span class="fu">&amp;</span> dataSet_min <span class="fu">%~</span> min n
+     <span class="fu">&amp;</span> dataSet_lines <span class="fu">.</span> traverse <span class="fu">%~</span>
+     ( ( line_end <span class="fu">.</span> _Point <span class="fu">.</span> _1 <span class="fu">+~</span> stepToTheRight )
+     <span class="fu">.</span> ( line_start <span class="fu">.</span> _Point <span class="fu">.</span> _1 <span class="fu">+~</span> stepToTheRight )
+     )
+     <span class="fu">&amp;</span> dataSet_lines <span class="fu">%~</span> (\xs <span class="ot">-&gt;</span> addNewDataPoint n xs <span class="fu">$</span> uncons xs)</code></pre></div>
+</section>
+    </div>
+  </div>
+
+  <script src="reveal.js/lib/js/head.min.js"></script>
+  <script src="reveal.js/js/reveal.js"></script>
+
+  <script>
+
+      // Full list of configuration options available at:
+      // https://github.com/hakimel/reveal.js#configuration
+      Reveal.initialize({
+
+        // Optional reveal.js plugins
+        dependencies: [
+          { src: 'reveal.js/lib/js/classList.js', condition: function() { return !document.body.classList; } },
+          { src: 'reveal.js/plugin/zoom-js/zoom.js', async: true },
+              { src: 'reveal.js/plugin/notes/notes.js', async: true }
+        ]
+      });
+    </script>
+    </body>
+</html>
