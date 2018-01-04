@@ -2,19 +2,19 @@
 % QFPL @ Data61, CSIRO
 % sean.chalmers@data61.csiro.au
 
-### Lenses are functions
+### The Point
 
-- Easy to lose sight of, but important to remember!
-- Lenses are still only functions, which is why we can compose them!
+> - To _really_ use lenses, you _will_ need to learn the theory.
+> - However, you don't *need* to learn the theory to _start_ using lenses.
+> - I hope to give you that start on the rote application of lenses.
+> - I am no expert, this is just how I started.
 
-### Housekeeping
+### Sacks of Lenses
 
-- I'll be using Haskell ``lens``
-- Scala has lenses too!
-- I don't claim to be an expert!
+- I'll be using Haskell ``lens`` package.
+- Scala has lenses too, check out ``monocle``.
 
-### Getter & Setter
-
+### Lens ~ Getter & Setter
 ```haskell
 -- Getter
 (^.) :: s -> Getting a s a -> a
@@ -24,11 +24,10 @@
 Talk over, right?
 
 ### Simplest Simples
-
 ```haskell
-data Foo = Foo 
+data Foo = Foo
   { _petCamelName     :: Text
-  , _petCamelTopSpeed :: Int 
+  , _petCamelTopSpeed :: Int
   }
 
 -- What units of speed? Cabbages?!
@@ -42,7 +41,7 @@ _petCamelName foo == "Fred" ==  foo ^. petCamelName
 Yay?
 
 ### [Inception Movie Pun]
-Reach deeper into ``Bar`` to retrieve the pet name:
+Reaching deeper into a data structure:
 ```haskell
 data Bar = Bar { _camelPerson :: Foo }
 
@@ -105,10 +104,10 @@ Geddit? eh? eh? ...fine.
 data A = A { _bars :: [Bar] }
 ```
 > - Get the names of all the camels
-> - Update speed values 
+> - Update speed values
 > - What function could possibly achieve such a thing?
 
-### ``traverse``, it's always traverse
+### ``traverse`` <3
 > - ```haskell
     tBars = bars . traverse
     ```
@@ -126,7 +125,6 @@ data A = A { _bars :: [Bar] }
     ```
 
 ### Traversal
-This is called a ``Traversal``.
 ```haskell
 tBars :: Traversal' A Bar
 tBars = bars . traverse
@@ -142,14 +140,14 @@ topSpeeds :: Applicative f => (Int -> f Int) -> A -> f A
 ```
 
 ### Fold
-Combining a Getter with a Traversal will yield a Fold.
+Composing a Getter with a Traversal will yield a Fold.
 ```haskell
 -- We saw a Fold earlier : (^..)
 a ^.. tBars . camelPerson . petCamelName
 ```
 ```haskell
 -- Only want the first camel person?
-a ^? bars . _head
+a ^? bars . _head :: Maybe Bar
 ```
 ```haskell
 -- Calculate maximum cabbage units?
@@ -172,7 +170,7 @@ Getter  Traversal
 ### Lets get wild.
 Update a value in a StateT?
 ```haskell
--- Assuming : StateT Foo m 
+-- Assuming : StateT Foo m
 petCamelName     .= "Bub"         -- Replace
 petCamelTopSpeed %= (-10)         -- Map
 petCamelName     <>= " the Swift" -- Mappend
@@ -182,15 +180,55 @@ petCamelName     <>= " the Swift" -- Mappend
     -- Assuming : StateT Bar m
     camelPerson . petCamelTopSpeed %= (-10)
     ```
+> - :D
 
-### Build Giant Updates
+### Giant Updates
+Update several different fields on a record.
 ```haskell
-\n ds -> 
+\n ds ->
   ds & dataSet_max %~ max n
      & dataSet_min %~ min n
      & dataSet_lines . traverse %~
      ( ( line_end . _Point . _1 +~ stepToTheRight )
      . ( line_start . _Point . _1 +~ stepToTheRight )
      )
-     & dataSet_lines %~ (\xs -> addNewDataPoint n xs $ uncons xs)
+     & dataSet_lines %~ (\xs -> addNewDataPoint n xs (uncons xs))
 ```
+
+### The Heck was ``_Point`` / ``_1`` ?
+
+That was a ``Prism``.
+
+> - Prisms are Traversals that may become Getters.
+> - One way to think of Prisms is as a Lens that is partial in one direction.
+> - ```haskell
+    Right 'c' ^? _Left == Nothing
+    Left 'c' ^? _Left == Just 'c'
+    ```
+> - ```haskell
+    5 ^. re _Left == Left 5
+    ```
+> - ```haskell
+    ( ( Left 5 ) & _Left .~ 6 ) == Left 6
+    ```
+
+### Smart(er) Constructors 
+You can build ``Prism``s for your own types:
+```haskell
+prism' :: (b -> s) -> (s -> Maybe a) -> Prism s s a b
+
+nat :: Prism' Integer Natural
+nat = prism' toInteger toNat
+  where
+    toNat i = if i < 0 
+              then Nothing 
+              else Just (fromInteger i)
+```
+
+### Trying it yourself
+REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL 
+REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL 
+REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL 
+REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL 
+REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL 
+REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL 

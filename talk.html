@@ -71,23 +71,24 @@ code > span.in { color: #0066ff; font-weight: bold; font-style: italic; } /* Inf
   <p class="date">sean.chalmers@data61.csiro.au</p>
 </section>
 
-<section id="lenses-are-functions" class="slide level3">
-<h3>Lenses are functions</h3>
+<section id="the-point" class="slide level3">
+<h3>The Point</h3>
 <ul>
-<li>Easy to lose sight of, but important to remember!</li>
-<li>Lenses are still only functions, which is why we can compose them!</li>
+<li class="fragment">To <em>really</em> use lenses, you <em>will</em> need to learn the theory.</li>
+<li class="fragment">However, you don't <em>need</em> to learn the theory to <em>start</em> using lenses.</li>
+<li class="fragment">I hope to give you that start on the rote application of lenses.</li>
+<li class="fragment">I am no expert, this is just how I started.</li>
 </ul>
 </section>
-<section id="housekeeping" class="slide level3">
-<h3>Housekeeping</h3>
+<section id="sacks-of-lenses" class="slide level3">
+<h3>Sacks of Lenses</h3>
 <ul>
-<li>I'll be using Haskell <code>lens</code></li>
-<li>Scala has lenses too!</li>
-<li>I don't claim to be an expert!</li>
+<li>I'll be using Haskell <code>lens</code> package.</li>
+<li>Scala has lenses too, check out <code>monocle</code>.</li>
 </ul>
 </section>
-<section id="getter-setter" class="slide level3">
-<h3>Getter &amp; Setter</h3>
+<section id="lens-getter-setter" class="slide level3">
+<h3>Lens ~ Getter &amp; Setter</h3>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- Getter</span>
 <span class="ot">(^.) ::</span> s <span class="ot">-&gt;</span> <span class="dt">Getting</span> a s a <span class="ot">-&gt;</span> a
 <span class="co">-- Setter</span>
@@ -96,9 +97,9 @@ code > span.in { color: #0066ff; font-weight: bold; font-style: italic; } /* Inf
 </section>
 <section id="simplest-simples" class="slide level3">
 <h3>Simplest Simples</h3>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Foo</span> <span class="fu">=</span> <span class="dt">Foo</span> 
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Foo</span> <span class="fu">=</span> <span class="dt">Foo</span>
   {<span class="ot"> _petCamelName     ::</span> <span class="dt">Text</span>
-  ,<span class="ot"> _petCamelTopSpeed ::</span> <span class="dt">Int</span> 
+  ,<span class="ot"> _petCamelTopSpeed ::</span> <span class="dt">Int</span>
   }
 
 <span class="co">-- What units of speed? Cabbages?!</span>
@@ -111,14 +112,14 @@ code > span.in { color: #0066ff; font-weight: bold; font-style: italic; } /* Inf
 </section>
 <section id="inception-movie-pun" class="slide level3">
 <h3>[Inception Movie Pun]</h3>
-<p>Reach deeper into <code>Bar</code> to retrieve the pet name:</p>
+<p>Reaching deeper into a data structure:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Bar</span> <span class="fu">=</span> <span class="dt">Bar</span> {<span class="ot"> _camelPerson ::</span> <span class="dt">Foo</span> }
 
 <span class="st">&quot;Sally&quot;</span> <span class="fu">=</span> bar <span class="fu">^.</span> camelPerson <span class="fu">.</span> petCamelName</code></pre></div>
 <p>Works for setting a value too:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">bar <span class="fu">&amp;</span> camelPerson <span class="fu">.</span> petCamelName <span class="fu">.~</span> <span class="st">&quot;Sally&quot;</span></code></pre></div>
 </section>
-<section id="lenses-are-functions-1" class="slide level3">
+<section id="lenses-are-functions" class="slide level3">
 <h3>Lenses are functions!</h3>
 <p>Lenses compose to make new lenses:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">camelPerson ::</span> <span class="dt">Lens&#39;</span> <span class="dt">Bar</span> <span class="dt">Foo</span>
@@ -162,8 +163,8 @@ petCamelName     <span class="fu">&lt;&gt;~</span> <span class="st">&quot; the W
 <li class="fragment">What function could possibly achieve such a thing?</li>
 </ul>
 </section>
-<section id="traverse-its-always-traverse" class="slide level3">
-<h3><code>traverse</code>, it's always traverse</h3>
+<section id="traverse-3" class="slide level3">
+<h3><code>traverse</code> &lt;3</h3>
 <ul>
 <li class="fragment"><div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">tBars <span class="fu">=</span> bars <span class="fu">.</span> traverse</code></pre></div></li>
 <li class="fragment"><div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- (^..) is an alias of &#39;toListOf&#39;</span>
@@ -176,7 +177,6 @@ a <span class="fu">^.</span> tBars <span class="fu">.</span> camelPerson <span c
 </section>
 <section id="traversal" class="slide level3">
 <h3>Traversal</h3>
-<p>This is called a <code>Traversal</code>.</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">tBars ::</span> <span class="dt">Traversal&#39;</span> <span class="dt">A</span> <span class="dt">Bar</span>
 tBars <span class="fu">=</span> bars <span class="fu">.</span> traverse</code></pre></div>
 <p>Which we can extend and reuse!</p>
@@ -187,11 +187,11 @@ topSpeeds <span class="fu">=</span> tBars <span class="fu">.</span> camelPerson 
 </section>
 <section id="fold" class="slide level3">
 <h3>Fold</h3>
-<p>Combining a Getter with a Traversal will yield a Fold.</p>
+<p>Composing a Getter with a Traversal will yield a Fold.</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- We saw a Fold earlier : (^..)</span>
 a <span class="fu">^..</span> tBars <span class="fu">.</span> camelPerson <span class="fu">.</span> petCamelName</code></pre></div>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- Only want the first camel person?</span>
-a <span class="fu">^?</span> bars <span class="fu">.</span> _head</code></pre></div>
+a <span class="fu">^?</span> bars <span class="fu">.</span><span class="ot"> _head ::</span> <span class="dt">Maybe</span> <span class="dt">Bar</span></code></pre></div>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- Calculate maximum cabbage units?</span>
 maximumOf (tBars <span class="fu">.</span> camelPerson <span class="fu">.</span> petCamelTopSpeed) a</code></pre></div>
 </section>
@@ -210,7 +210,7 @@ Getter  Traversal
 <section id="lets-get-wild." class="slide level3">
 <h3>Lets get wild.</h3>
 <p>Update a value in a StateT?</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- Assuming : StateT Foo m </span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- Assuming : StateT Foo m</span>
 petCamelName     <span class="fu">.=</span> <span class="st">&quot;Bub&quot;</span>         <span class="co">-- Replace</span>
 petCamelTopSpeed <span class="fu">%=</span> (<span class="fu">-</span><span class="dv">10</span>)         <span class="co">-- Map</span>
 petCamelName     <span class="fu">&lt;&gt;=</span> <span class="st">&quot; the Swift&quot;</span> <span class="co">-- Mappend</span></code></pre></div>
@@ -218,18 +218,48 @@ petCamelName     <span class="fu">&lt;&gt;=</span> <span class="st">&quot; the S
 <li class="fragment">What if it's in a thing in the thing in StateT?</li>
 <li class="fragment"><div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- Assuming : StateT Bar m</span>
 camelPerson <span class="fu">.</span> petCamelTopSpeed <span class="fu">%=</span> (<span class="fu">-</span><span class="dv">10</span>)</code></pre></div></li>
+<li class="fragment">:D</li>
 </ul>
 </section>
-<section id="build-giant-updates" class="slide level3">
-<h3>Build Giant Updates</h3>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">\n ds <span class="ot">-&gt;</span> 
+<section id="giant-updates" class="slide level3">
+<h3>Giant Updates</h3>
+<p>Update several different fields on a record.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">\n ds <span class="ot">-&gt;</span>
   ds <span class="fu">&amp;</span> dataSet_max <span class="fu">%~</span> max n
      <span class="fu">&amp;</span> dataSet_min <span class="fu">%~</span> min n
      <span class="fu">&amp;</span> dataSet_lines <span class="fu">.</span> traverse <span class="fu">%~</span>
      ( ( line_end <span class="fu">.</span> _Point <span class="fu">.</span> _1 <span class="fu">+~</span> stepToTheRight )
      <span class="fu">.</span> ( line_start <span class="fu">.</span> _Point <span class="fu">.</span> _1 <span class="fu">+~</span> stepToTheRight )
      )
-     <span class="fu">&amp;</span> dataSet_lines <span class="fu">%~</span> (\xs <span class="ot">-&gt;</span> addNewDataPoint n xs <span class="fu">$</span> uncons xs)</code></pre></div>
+     <span class="fu">&amp;</span> dataSet_lines <span class="fu">%~</span> (\xs <span class="ot">-&gt;</span> addNewDataPoint n xs (uncons xs))</code></pre></div>
+</section>
+<section id="the-heck-was-_point-_1" class="slide level3">
+<h3>The Heck was <code>_Point</code> / <code>_1</code> ?</h3>
+<p>That was a <code>Prism</code>.</p>
+<ul>
+<li class="fragment">Prisms are Traversals that may become Getters.</li>
+<li class="fragment">One way to think of Prisms is as a Lens that is partial in one direction.</li>
+<li class="fragment"><div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="dt">Right</span> <span class="ch">&#39;c&#39;</span> <span class="fu">^?</span> _Left <span class="fu">==</span> <span class="dt">Nothing</span>
+<span class="dt">Left</span> <span class="ch">&#39;c&#39;</span> <span class="fu">^?</span> _Left <span class="fu">==</span> <span class="dt">Just</span> <span class="ch">&#39;c&#39;</span></code></pre></div></li>
+<li class="fragment"><div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="dv">5</span> <span class="fu">^.</span> re _Left <span class="fu">==</span> <span class="dt">Left</span> <span class="dv">5</span></code></pre></div></li>
+<li class="fragment"><div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">( ( <span class="dt">Left</span> <span class="dv">5</span> ) <span class="fu">&amp;</span> _Left <span class="fu">.~</span> <span class="dv">6</span> ) <span class="fu">==</span> <span class="dt">Left</span> <span class="dv">6</span></code></pre></div></li>
+</ul>
+</section>
+<section id="smarter-constructors" class="slide level3">
+<h3>Smart(er) Constructors</h3>
+<p>You can build <code>Prism</code>s for your own types:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">prism&#39; ::</span> (b <span class="ot">-&gt;</span> s) <span class="ot">-&gt;</span> (s <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a) <span class="ot">-&gt;</span> <span class="dt">Prism</span> s s a b
+
+<span class="ot">nat ::</span> <span class="dt">Prism&#39;</span> <span class="dt">Integer</span> <span class="dt">Natural</span>
+nat <span class="fu">=</span> prism&#39; toInteger toNat
+  <span class="kw">where</span>
+    toNat i <span class="fu">=</span> <span class="kw">if</span> i <span class="fu">&lt;</span> <span class="dv">0</span> 
+              <span class="kw">then</span> <span class="dt">Nothing</span> 
+              <span class="kw">else</span> <span class="dt">Just</span> (fromInteger i)</code></pre></div>
+</section>
+<section id="trying-it-yourself" class="slide level3">
+<h3>Trying it yourself</h3>
+<p>REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL</p>
 </section>
     </div>
   </div>
