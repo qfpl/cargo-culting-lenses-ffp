@@ -1,9 +1,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell   #-}
+{-# LANGUAGE RankNTypes        #-}
+
 module Examples where
 
 import           Control.Lens
 import           Data.Text
+
+import GHC.Natural
 
 data Foo = Foo
   { _petCamelName     :: Text
@@ -39,5 +43,12 @@ tBars = bars . traverse
 topSpeeds :: Traversal' A Int
 topSpeeds = tBars . camelPerson . petCamelTopSpeed
 
-slowCamels :: Int -> Traversal' A A
+slowCamels :: Int -> Traversal' A Int
 slowCamels n = topSpeeds . filtered (< n)
+
+_Nat :: Prism' Integer Natural
+_Nat = prism toInteger toNatural
+  where
+    toNatural i = if i < 0
+      then Left i
+      else Right (fromInteger i)

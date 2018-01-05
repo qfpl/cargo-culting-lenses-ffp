@@ -238,24 +238,77 @@ camelPerson <span class="fu">.</span> petCamelTopSpeed <span class="fu">%=</span
 <p>That was a <code>Prism</code>.</p>
 <ul>
 <li class="fragment">Prisms are Traversals that may become Getters.</li>
-<li class="fragment">One way to think of Prisms is as a Lens that is partial in one direction.</li>
+<li class="fragment">One way to think of Prisms is as a Lens that is partial in one direction, with laws.</li>
 <li class="fragment"><div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="dt">Right</span> <span class="ch">&#39;c&#39;</span> <span class="fu">^?</span> _Left <span class="fu">==</span> <span class="dt">Nothing</span>
 <span class="dt">Left</span> <span class="ch">&#39;c&#39;</span> <span class="fu">^?</span> _Left <span class="fu">==</span> <span class="dt">Just</span> <span class="ch">&#39;c&#39;</span></code></pre></div></li>
 <li class="fragment"><div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="dv">5</span> <span class="fu">^.</span> re _Left <span class="fu">==</span> <span class="dt">Left</span> <span class="dv">5</span></code></pre></div></li>
 <li class="fragment"><div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">( ( <span class="dt">Left</span> <span class="dv">5</span> ) <span class="fu">&amp;</span> _Left <span class="fu">.~</span> <span class="dv">6</span> ) <span class="fu">==</span> <span class="dt">Left</span> <span class="dv">6</span></code></pre></div></li>
 </ul>
 </section>
-<section id="smarter-constructors" class="slide level3">
-<h3>Smart(er) Constructors</h3>
-<p>You can build <code>Prism</code>s for your own types:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">prism&#39; ::</span> (b <span class="ot">-&gt;</span> s) <span class="ot">-&gt;</span> (s <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a) <span class="ot">-&gt;</span> <span class="dt">Prism</span> s s a b
-
-<span class="ot">nat ::</span> <span class="dt">Prism&#39;</span> <span class="dt">Integer</span> <span class="dt">Natural</span>
-nat <span class="fu">=</span> prism&#39; toInteger toNat
+<section id="handling-failure" class="slide level3">
+<h3>Handling Failure</h3>
+<p>Consider the following JSON:</p>
+<div class="sourceCode"><pre class="sourceCode json"><code class="sourceCode json"><span class="fu">{</span> <span class="dt">&quot;alpha&quot;</span><span class="fu">:</span>
+  <span class="fu">{</span> <span class="dt">&quot;beta&quot;</span><span class="fu">:</span>
+    <span class="ot">[</span><span class="er">..</span><span class="ot">,</span> <span class="fu">{</span> <span class="dt">&quot;gamma&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="er">..</span><span class="ot">,</span> <span class="fu">{</span><span class="dt">&quot;delta&quot;</span><span class="fu">:</span> <span class="er">&lt;some</span> <span class="er">bool&gt;</span> <span class="fu">}</span><span class="ot">,</span> <span class="er">...</span><span class="ot">]</span> <span class="fu">}</span><span class="ot">,</span> <span class="er">..</span><span class="ot">]</span>
+  <span class="fu">}</span>
+<span class="fu">}</span></code></pre></div>
+<ul>
+<li>Assuming <code>gamma</code> is at index 3, and <code>delta</code> is at index 2. &gt; Your mission is to flip the value at <code>delta</code>.</li>
+</ul>
+</section>
+<section id="first-hack" class="slide level3">
+<h3>First Hack</h3>
+<div class="sourceCode"><pre class="sourceCode c"><code class="sourceCode c">a = getAtKey blob <span class="st">&quot;alpha&quot;</span>
+<span class="cf">if</span> ( null != a ) {
+  b = getAtKey a <span class="st">&quot;beta&quot;</span> {
+    <span class="cf">if</span> ( null != b &amp;&amp; isArray b ) {
+      c = getAtIndex b <span class="dv">3</span>
+      <span class="cf">if</span> ( null != c ) {
+        fooList = getAtKey <span class="st">&quot;gamma&quot;</span>
+        <span class="cf">if</span> ( null != fooList &amp;&amp; isArray fooList ) {
+          fooObj = getAtIndex c <span class="dv">2</span>
+          <span class="cf">if</span> ( null != fooObj ) {
+            fooVal = getBoolValAtKey <span class="st">&quot;delta&quot;</span> fooObj
+            <span class="cf">if</span> ( null != fooVal ) {
+              newFoo = setValueAtKey <span class="st">&quot;delta&quot;</span> (not fooVal)
+              <span class="cf">return</span> ( setValueAtKey <span class="st">&quot;beta&quot;</span> a
+                ( setValueAtIndex <span class="dv">3</span> b
+                  ( setValueAtKey  <span class="st">&quot;gamma&quot;</span> c
+                    ( setValueAtIndex <span class="dv">2</span> fooList newFoo )
+                  )
+                )
+              )
+            }
+          }
+        }
+      }
+    }
+  }
+}</code></pre></div>
+<p><small>This pseudo-code is an exaggeration, but not by much and you know it.</small></p>
+</section>
+<section id="prism-attempt" class="slide level3">
+<h3>Prism Attempt</h3>
+<p>Using <code>lens-aeson</code> and <code>lens</code>.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">( key <span class="st">&quot;alpha&quot;</span>
+<span class="fu">.</span> key <span class="st">&quot;beta&quot;</span> <span class="fu">.</span> _Array <span class="fu">.</span> ix <span class="dv">3</span>
+<span class="fu">.</span> key <span class="st">&quot;gamma&quot;</span> <span class="fu">.</span> _Array <span class="fu">.</span> ix <span class="dv">2</span>
+<span class="fu">.</span> key <span class="st">&quot;delta&quot;</span> <span class="fu">.</span> _Bool <span class="fu">%~</span> not
+)<span class="ot"> ::</span> <span class="dt">AsValue</span> t <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t</code></pre></div>
+<p><small><em>cough</em></small></p>
+</section>
+<section id="tricksy-constructors" class="slide level3">
+<h3>Tricksy Constructors</h3>
+<p>Prisms can be used as constructors for your own types.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">_Nat ::</span> <span class="dt">Prism&#39;</span> <span class="dt">Integer</span> <span class="dt">Natural</span>
+_Nat <span class="fu">=</span> prism&#39; toInteger toNat
   <span class="kw">where</span>
-    toNat i <span class="fu">=</span> <span class="kw">if</span> i <span class="fu">&lt;</span> <span class="dv">0</span> 
-              <span class="kw">then</span> <span class="dt">Nothing</span> 
-              <span class="kw">else</span> <span class="dt">Just</span> (fromInteger i)</code></pre></div>
+    toNat i <span class="fu">=</span> <span class="kw">if</span> i <span class="fu">&lt;</span> <span class="dv">0</span>
+              <span class="kw">then</span> <span class="dt">Left</span> i
+              <span class="kw">else</span> <span class="dt">Right</span> (fromInteger i)</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">  <span class="dv">5</span>  <span class="fu">^?</span> _Nat <span class="fu">=</span> <span class="dt">Just</span> (<span class="dv">5</span><span class="ot"> ::</span> <span class="dt">Natural</span>)
+(<span class="fu">-</span><span class="dv">5</span>) <span class="fu">^?</span> _Nat <span class="fu">=</span> <span class="dt">Nothing</span></code></pre></div>
 </section>
 <section id="trying-it-yourself" class="slide level3">
 <h3>Trying it yourself</h3>

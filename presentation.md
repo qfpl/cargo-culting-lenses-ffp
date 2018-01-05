@@ -200,7 +200,7 @@ Update several different fields on a record.
 That was a ``Prism``.
 
 > - Prisms are Traversals that may become Getters.
-> - One way to think of Prisms is as a Lens that is partial in one direction.
+> - One way to think of Prisms is as a Lens that is partial in one direction, with laws.
 > - ```haskell
     Right 'c' ^? _Left == Nothing
     Left 'c' ^? _Left == Just 'c'
@@ -212,23 +212,80 @@ That was a ``Prism``.
     ( ( Left 5 ) & _Left .~ 6 ) == Left 6
     ```
 
-### Smart(er) Constructors 
-You can build ``Prism``s for your own types:
-```haskell
-prism' :: (b -> s) -> (s -> Maybe a) -> Prism s s a b
+### Handling Failure
+Consider the following JSON:
+```json
+{ "alpha":
+  { "beta":
+    [.., { "gamma": [.., {"delta": <some bool> }, ...] }, ..]
+  }
+}
+```
+- Assuming ``gamma`` is at index 3, and ``delta`` is at index 2.
+> Your mission is to flip the value at ``delta``.
 
-nat :: Prism' Integer Natural
-nat = prism' toInteger toNat
+### First Hack
+```c
+a = getAtKey blob "alpha"
+if ( null != a ) {
+  b = getAtKey a "beta" {
+    if ( null != b && isArray b ) {
+      c = getAtIndex b 3
+      if ( null != c ) {
+        fooList = getAtKey "gamma"
+        if ( null != fooList && isArray fooList ) {
+          fooObj = getAtIndex c 2
+          if ( null != fooObj ) {
+            fooVal = getBoolValAtKey "delta" fooObj
+            if ( null != fooVal ) {
+              newFoo = setValueAtKey "delta" (not fooVal)
+              return ( setValueAtKey "beta" a
+                ( setValueAtIndex 3 b
+                  ( setValueAtKey  "gamma" c
+                    ( setValueAtIndex 2 fooList newFoo )
+                  )
+                )
+              )
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
+<small>This pseudo-code is an exaggeration, but not by much and you know it.</small>
+
+### Prism Attempt
+Using ``lens-aeson`` and ``lens``.
+```haskell
+( key "alpha"
+. key "beta" . _Array . ix 3
+. key "gamma" . _Array . ix 2
+. key "delta" . _Bool %~ not
+) :: AsValue t => t -> t
+```
+<small>*cough*</small>
+
+### Tricksy Constructors
+Prisms can be used as constructors for your own types.
+```haskell
+_Nat :: Prism' Integer Natural
+_Nat = prism' toInteger toNat
   where
-    toNat i = if i < 0 
-              then Nothing 
-              else Just (fromInteger i)
+    toNat i = if i < 0
+              then Left i
+              else Right (fromInteger i)
+```
+```haskell
+  5  ^? _Nat = Just (5 :: Natural)
+(-5) ^? _Nat = Nothing
 ```
 
 ### Trying it yourself
-REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL 
-REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL 
-REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL 
-REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL 
-REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL 
-REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL 
+REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL
+REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL
+REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL
+REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL
+REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL
+REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL
