@@ -1,4 +1,5 @@
-HIGHSTYLE := espresso
+# HIGHSTYLE := espresso
+HIGHSTYLE := zenburn
 CSS := css/custom.css
 
 talk.html: presentation.md

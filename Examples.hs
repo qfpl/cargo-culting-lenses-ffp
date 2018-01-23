@@ -1,13 +1,17 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE RankNTypes        #-}
+{-# LANGUAGE TemplateHaskell   #-}
 
 module Examples where
 
 import           Control.Lens
+import           Control.Monad.State
+import           Data.Map
 import           Data.Text
 
-import GHC.Natural
+import           Data.Semigroup      ((<>))
+
+import           GHC.Natural
 
 data Foo = Foo
   { _petCamelName     :: Text
@@ -27,6 +31,23 @@ data A = A
   }
   deriving Show
 makeLenses ''A
+
+nestedMultipleUpdate :: Bar -> Bar
+nestedMultipleUpdate =
+  camelPerson %~ \f ->
+    f & petCamelName .~ "Sally"
+      & petCamelTopSpeed .~ 48
+
+nestedUpdate :: Bar -> Bar
+nestedUpdate a =
+  let
+    nn = _petCamelName . _camelPerson $ a
+  in
+    a { _camelPerson =
+        (_camelPerson a) {
+          _petCamelName = nn <> " the Wise"
+        }
+      }
 
 testA :: A
 testA = A
@@ -52,3 +73,14 @@ _Nat = prism toInteger toNatural
     toNatural i = if i < 0
       then Left i
       else Right (fromInteger i)
+
+modifyMapInStateOMG :: MonadIO m => StateT (Map Int String) m ()
+modifyMapInStateOMG = do
+  -- Set a value, creating an element if it doesn't exist, then return the new value
+  a <- at 1 <?= "maybe"
+  liftIO $ print a
+  -- Set a value, creating an element if it doesn't exist, returning the old value.
+  b <- at 3 <<?= "new value"
+  liftIO $ print b
+  -- run a function on something in state
+  at 3 . _Just <>= " Fred"

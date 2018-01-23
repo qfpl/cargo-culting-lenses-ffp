@@ -5,93 +5,150 @@
 ### The Point
 
 > - To _really_ use lenses, you _will_ need to learn the theory.
-> - However, you don't *need* to learn the theory to _start_ using lenses.
+> - However, you don't _need_ to learn the theory to _start_ using lenses.
 > - I hope to give you that start on the rote application of lenses.
-> - I am no expert, this is just how I started.
+> - I am no expert
 
 ### Sacks of Lenses
 
-- I'll be using Haskell ``lens`` package.
-- Scala has lenses too, check out ``monocle``.
+* I'll be using Haskell ``lens`` package.
+* OCaml has lenses, ``ocaml-optics``, ``ocaml-lens``.
+* Scala too, ``monocle``.
 
 ### Lens ~ Getter & Setter
+
 ```haskell
 -- Getter
 (^.) :: s -> Getting a s a -> a
 -- Setter
 (.~) :: ASetter s t a b -> b -> s -> t
 ```
+
 Talk over, right?
 
 ### Simplest Simples
+
 ```haskell
 data Foo = Foo
   { _petCamelName     :: Text
   , _petCamelTopSpeed :: Int
   }
-
--- What units of speed? Cabbages?!
-let foo = Foo "Fred" 35
+-- Template Haskell to write the lenses for us
+makeLenses ''Foo
 ```
 
 ### Getter
+
 ```haskell
-_petCamelName foo == "Fred" ==  foo ^. petCamelName
+_petCamelName foo = "Fred" = foo ^. petCamelName
 ```
+
 Yay?
 
 ### [Inception Movie Pun]
+
 Reaching deeper into a data structure:
+
 ```haskell
 data Bar = Bar { _camelPerson :: Foo }
 
 "Sally" = bar ^. camelPerson . petCamelName
-```
-Works for setting a value too:
-```haskell
-bar & camelPerson . petCamelName .~ "Sally"
+--
+"Sally" = _petCamelName . _camelPerson $ bar
 ```
 
-### Lenses are functions!
+### Lenses are functions
+
 Lenses compose to make new lenses:
+
 ```haskell
 camelPerson :: Lens' Bar Foo
 petCamelName :: Lens' Foo Text
 ```
+
 Compose these with (``.``)
+
 ```haskell
 camelPerson . petCamelName :: Lens' Bar Text
 ```
 
 ### Setter
+
 Simple replacement using ``(.~)``
+
 ```haskell
 (petCamelName .~) :: Text -> Foo -> Foo
 --
-petCamelName .~ "Sally"
+a & petCamelName .~ "Sally" = a { _petCamelName = "Sally" }
 ```
+
 Using reverse apply ``(&)``:
+
 ```haskell
 foo & petCamelName .~ "Sally"
 ```
 
-### Multiple Updates ?
+### What about updating?
+
+What about updating a thing in a thing in a thing?
+
 ```haskell
-f :: Foo -> Foo
-f = petCamelName .~ "Sally" & petCamelTopSpeed .~ 48
+nestedUpdate a =
+  let
+    nn = _petCamelName . _camelPerson $ a
+  in
+    a { _camelPerson =
+        _camelPerson a {
+          _petCamelName = nn <> " the Wise"
+        }
+      }
 ```
-Applied directly:
+
+### Another time, another place
+
+```java
+Helper.returnNullOrCallFunction(
+        Helper.returnNullOrCallFunction(
+                myObject.getSomeOtherObject(),
+                SomeOtherObject::getAnotherObject
+        ),
+        AnotherObject::increaseTheThing
+);
+```
+
+<small>Taken from: https://stackoverflow.com/a/26414202</small>
+
+### But using lenses
+
+```haskell
+nestedUpdate =
+  -- Using `set with function`
+  camelPerson . petCamelName %~ (<> " the Wise")
+  -- Using a mappend setter
+  camelPerson . petCamelname <>~ " the Wise"
+```
+
+### Multiple Updates
+
 ```haskell
 foo & petCamelName .~ "Sally"
     & petCamelTopSpeed .~ 48
+--
+camelPerson %~ \f -> f
+  & petCamelName .~ "Sally" 
+  & petCamelTopSpeed .~ 48
 ```
 
 ### Update with a function
+
 Apply a function to your lens target
+
 ```haskell
 petCamelTopSpeed %~ (+10)
 ```
+
 There are heaps of prebaked operators:
+
 ```haskell
 petCamelTopSpeed +~ 10           -- Add 10 cabbages
 petCamelTopSpeed //~ 2           -- Divide by 2 cabbages
@@ -99,15 +156,19 @@ petCamelName     <>~ " the Wise" -- Reward victory with a title
 ```
 
 ### Getting interesting
+
 Geddit? eh? eh? ...fine.
+
 ```haskell
 data A = A { _bars :: [Bar] }
 ```
+
 > - Get the names of all the camels
 > - Update speed values
 > - What function could possibly achieve such a thing?
 
 ### ``traverse`` <3
+
 > - ```haskell
     tBars = bars . traverse
     ```
@@ -120,45 +181,50 @@ data A = A { _bars :: [Bar] }
     tBars . camelPerson . petCamelTopSpeed +~ 10
     ```
 > - ```haskell
-    -- What do you think this would do?
+    -- Can we do this? What is the answer?
     a ^. tBars . camelPerson . petCamelName
     ```
 
 ### Traversal
+
 ```haskell
 tBars :: Traversal' A Bar
 tBars = bars . traverse
 ```
+
 Which we can extend and reuse!
+
 ```haskell
 topSpeeds :: Traversal' A Int
 topSpeeds = tBars . camelPerson . petCamelTopSpeed
 ```
-Exercise: Write the same function without using lenses.
+
+Exercise: Write the same function without lens
+
 ```haskell
 topSpeeds :: Applicative f => (Int -> f Int) -> A -> f A
 ```
 
 ### Fold
+
 Composing a Getter with a Traversal will yield a Fold.
+
 ```haskell
 -- We saw a Fold earlier : (^..)
 a ^.. tBars . camelPerson . petCamelName
 ```
+
 ```haskell
 -- Only want the first camel person?
 a ^? bars . _head :: Maybe Bar
 ```
-```haskell
--- Calculate maximum cabbage units?
-maximumOf (tBars . camelPerson . petCamelTopSpeed) a
-```
 
 ### Lens Family Tree
-```
+
+```text
   Fold   Setter
-   / \_____/
-   \       \
+  /  \_____/
+  \ /      \
 Getter  Traversal
    /  ____/
    \ /    \
@@ -167,23 +233,27 @@ Getter  Traversal
       Iso
 ```
 
-### Lets get wild.
+### Lets get wild
+
 Update a value in a StateT?
+
 ```haskell
 -- Assuming : StateT Foo m
 petCamelName     .= "Bub"         -- Replace
 petCamelTopSpeed %= (-10)         -- Map
 petCamelName     <>= " the Swift" -- Mappend
 ```
+
 > - What if it's in a thing in the thing in StateT?
 > - ```haskell
     -- Assuming : StateT Bar m
     camelPerson . petCamelTopSpeed %= (-10)
     ```
-> - :D
 
 ### Giant Updates
+
 Update several different fields on a record.
+
 ```haskell
 \n ds ->
   ds & dataSet_max %~ max n
@@ -195,7 +265,7 @@ Update several different fields on a record.
      & dataSet_lines %~ (\xs -> addNewDataPoint n xs (uncons xs))
 ```
 
-### The Heck was ``_Point`` / ``_1`` ?
+### The Heck was ``_Point`` / ``_1``
 
 That was a ``Prism``.
 
@@ -213,7 +283,9 @@ That was a ``Prism``.
     ```
 
 ### Handling Failure
+
 Consider the following JSON:
+
 ```json
 { "alpha":
   { "beta":
@@ -221,11 +293,13 @@ Consider the following JSON:
   }
 }
 ```
-- Assuming ``gamma`` is at index 3, and ``delta`` is at index 2.
+
+* Assuming ``gamma`` is at index 3, and ``delta`` is at index 2.
 > Your mission is to flip the value at ``delta``.
 
 ### First Hack
-```c
+
+```js
 a = getAtKey blob "alpha"
 if ( null != a ) {
   b = getAtKey a "beta" {
@@ -254,10 +328,13 @@ if ( null != a ) {
   }
 }
 ```
+
 <small>This pseudo-code is an exaggeration, but not by much and you know it.</small>
 
-### Prism Attempt
+### Yay
+
 Using ``lens-aeson`` and ``lens``.
+
 ```haskell
 ( key "alpha"
 . key "beta" . _Array . ix 3
@@ -265,27 +342,97 @@ Using ``lens-aeson`` and ``lens``.
 . key "delta" . _Bool %~ not
 ) :: AsValue t => t -> t
 ```
-<small>*cough*</small>
 
-### Tricksy Constructors
-Prisms can be used as constructors for your own types.
+<small>*ahem*</small>
+
+### Prisms
+
+The ``_Array`` and ``_Bool`` things are both a ``Prism``.
+
 ```haskell
-_Nat :: Prism' Integer Natural
-_Nat = prism' toInteger toNat
-  where
-    toNat i = if i < 0
-              then Left i
-              else Right (fromInteger i)
+"[1,2,3]" ^? _Array
+--
+[1,2,3] ^. re _Array
 ```
+
+### Prisms are Traversals
+
 ```haskell
-  5  ^? _Nat = Just (5 :: Natural)
-(-5) ^? _Nat = Nothing
+Just 3 ^? _Just = Just 3
+Nothing ^? _Just = Nothing
 ```
+
+```haskell
+('a', Just 3) & _2 . _Just %~ (+1) = ('a', Just 4)
+```
+
+### Lens Operator Grammar
+
+Lens operators are formed from a symbol DSL.
+
+* ``^`` - refers to a fold
+* ``~`` - modification or setting
+* ``?`` - results optional
+* ``<`` - return the new value
+* ``<<`` - return the old value
+* ``%`` - use a given function
+* ``%%`` - use a given traversal
+* ``=`` - apply lens to ``MonadState``
+* ``.`` - which side should have the lenses
+
+### Modifying a Map
+
+```haskell
+let
+  m = Map.fromList [(1, "susan"), (2, "jo")]
+in
+  m & at 1 .~ "bob"
+    & at 3 ?~ "pixie"
+    & at 2 %~ _f :: ??
+```
+
+### Oh my
+
+Modifying a map in your StateT, setting a new value if one exists, but
+creating a new key-value pair if it doesn't exist, and returning the previous
+value if there was one?
+
+```haskell
+data A = A
+  { _theFoo :: Foo
+  , _theMap :: Map String Int
+  }
+```
+
+> - ```haskell
+    a <- theMap . at "foo" <<?= 37
+    ```
+
+### The 'Of' family
+
+Use a lens to target a part of a structure.
+
+* traverseOf, itraverseOf
+* maximumOf, minimumOf
+* foldMapOf, mapMOf
+
+### How I learned
+
+* Haddock diving
+* Playing in the REPL
+* "Lets Lens" introductory course
 
 ### Trying it yourself
+
 REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL
 REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL
 REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL
 REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL
 REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL
 REPL REPL REPL REPL REPL REPL REPL REPL REPL REPL
+
+### Thanks for suffering through
+
+Questions ?
+
+Lets Lens! - https://github.com/data61/lets-lens
