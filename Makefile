@@ -1,4 +1,3 @@
-# HIGHSTYLE := espresso
 HIGHSTYLE := zenburn
 CSS := css/custom.css
 
